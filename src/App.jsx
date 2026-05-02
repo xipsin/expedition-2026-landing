@@ -6,6 +6,7 @@ import {
   X, HeartPulse, Sparkles, Star, CalendarDays, Phone, Menu,
   MessageCircle, Navigation, ChevronLeft, ChevronRight, Crown, ZoomIn
 } from 'lucide-react';
+import { DEFAULT_LEADS_WEBHOOK_URL } from '../lead-webhook-url.js';
 
 // ==========================================
 // 1. КОНФИГУРАЦИЯ ССЫЛОК НА ФОТОГРАФИИ
@@ -955,7 +956,9 @@ export default function App() {
     e.preventDefault();
     setFormState('loading');
 
-    const webhook = import.meta.env.VITE_LEADS_WEBHOOK_URL || "";
+    const webhook =
+      (import.meta.env.VITE_LEADS_WEBHOOK_URL || "").trim() ||
+      DEFAULT_LEADS_WEBHOOK_URL;
     const leadSecretRaw = import.meta.env.VITE_LEADS_SECRET;
     const leadSecret =
       typeof leadSecretRaw === "string" && leadSecretRaw.trim() !== ""
@@ -964,12 +967,6 @@ export default function App() {
     // В dev Vite проксирует на GAS, иначе браузер упирается в CORS (OPTIONS к script.google.com).
     const leadUrl =
       import.meta.env.DEV && webhook ? "/api/leads-gas" : webhook;
-
-    if (!leadUrl) {
-      console.error("Задайте VITE_LEADS_WEBHOOK_URL в .env и перезапустите dev / пересоберите проект.");
-      setFormState('error');
-      return;
-    }
 
     const phone = formData.phone.trim();
     if (!/^\+?[0-9()\-\s]{10,}$/.test(phone)) {
@@ -994,7 +991,7 @@ export default function App() {
     try {
       const response = await fetch(leadUrl, {
         method: "POST",
-        headers: { "Content-Type": "application/json; charset=utf-8" },
+        headers: { "Content-Type": "text/plain;charset=utf-8" },
         body: JSON.stringify(payload),
       });
 

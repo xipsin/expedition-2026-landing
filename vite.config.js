@@ -3,13 +3,15 @@ import { fileURLToPath } from "node:url";
 import { defineConfig, loadEnv } from "vite";
 import react from "@vitejs/plugin-react";
 import tailwindcss from "@tailwindcss/vite";
+import { DEFAULT_LEADS_WEBHOOK_URL } from "./lead-webhook-url.js";
 
 const projectRoot = path.dirname(fileURLToPath(import.meta.url));
 
 // https://vite.dev/config/
 export default defineConfig(({ mode }) => {
   const env = loadEnv(mode, projectRoot, "");
-  const webhook = env.VITE_LEADS_WEBHOOK_URL || "";
+  const webhook =
+    (env.VITE_LEADS_WEBHOOK_URL || "").trim() || DEFAULT_LEADS_WEBHOOK_URL;
 
   let proxy = {};
   if (webhook) {
