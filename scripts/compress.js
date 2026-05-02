@@ -10,6 +10,12 @@ import { fileURLToPath } from 'url';
 // Установите false, если нужен строгий порядок (например, по алфавиту или номерам файлов).
 const SHUFFLE_PHOTOS = true; 
 
+// Галерея: ширина HD и качество WebP (после изменения перезапустите скрипт и закоммитьте public/gallery + photos.json)
+const GALLERY_MAX_WIDTH = 1200;
+const WEBP_QUALITY_HD = 75;
+const LQIP_MAX_WIDTH = 40;
+const WEBP_QUALITY_LQIP = 20;
+
 // Настройки обложки (Hero)
 const PROCESS_HERO = true; // Искать hero.jpg в корне папки raw_photos и обрабатывать его
 const HERO_DARKEN_PERCENT = 70; // Процент затемнения (0 - без затемнения, 100 - полностью черное)
@@ -70,15 +76,15 @@ async function processImages() {
     try {
       // ШАГ А: Создаем основную HD версию
       await sharp(inputPath)
-        .resize({ width: 1400, withoutEnlargement: true }) // Большой размер для Lightbox, но не растягиваем мелкие
-        .webp({ quality: 80 }) // Оптимальное качество для веба
+        .resize({ width: GALLERY_MAX_WIDTH, withoutEnlargement: true })
+        .webp({ quality: WEBP_QUALITY_HD })
         .toFile(path.join(OUTPUT_DIR, hdFilename));
 
       // ШАГ Б: Создаем LQIP (Крошечная размытая копия для слабого интернета)
       await sharp(inputPath)
-        .resize({ width: 40 }) // Сжимаем до микроскопических 40 пикселей!
-        .blur(4) // Сильно размываем
-        .webp({ quality: 20 }) // Качество неважно, все равно размыто
+        .resize({ width: LQIP_MAX_WIDTH })
+        .blur(4)
+        .webp({ quality: WEBP_QUALITY_LQIP })
         .toFile(path.join(OUTPUT_DIR, lqipFilename));
       
       console.log(`✅ Обработано: ${file}`);

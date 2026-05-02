@@ -12,25 +12,25 @@ import {
 // ==========================================
 const SITE_IMAGES = {
   hero: "/images/hero.webp",
-  manifesto: "/images/brezhneva.png",
+  manifesto: "/images/brezhneva.webp",
   leisure: {
-    engineering: "/images/mechvarium.png",
-    sea: "/images/sea.png",
-    creative: "/images/creative.png",
-    team: "/images/team.png"
+    engineering: "/images/mechvarium.webp",
+    sea: "/images/sea.webp",
+    creative: "/images/creative.webp",
+    team: "/images/team.webp"
   },
   comfortGallery: [
-    "/images/base_1.png", 
-    "/images/base_2.png", 
-    "/images/base_3.png", 
-    "/images/base_4.png"  
+    "/images/base_1.webp",
+    "/images/base_2.webp",
+    "/images/base_3.webp",
+    "/images/base_4.webp"
   ],
   photoGalleryFallback: [
-    "/images/fallback_1.png",
-    "/images/fallback_2.png",
-    "/images/fallback_3.png",
-    "/images/fallback_4.png",
-    "/images/fallback_5.png"
+    "/images/fallback_1.webp",
+    "/images/fallback_2.webp",
+    "/images/fallback_3.webp",
+    "/images/fallback_4.webp",
+    "/images/fallback_5.webp"
   ]
 };
 
@@ -55,11 +55,6 @@ const SITE_SETTINGS = {
     photoZoomScale: "hover:scale-125",     
     stickyNavThreshold: 50,                
     formSubmitTimeout: 1500                
-  },
-  // Настройки для отправки формы в Telegram
-  api: {
-    telegramBotToken: "8606617925:AAHD2-UjJ4eyBa9YLIxm_GJvEj99FZdJKrg", // Замените на токен от BotFather
-    telegramChatId: "146327272"       // Замените на ваш ID или ID группы
   }
 };
 
@@ -122,25 +117,25 @@ const SITE_CONTENT = {
     { 
       name: "Елена Брежнева", 
       role: "Директор и основатель центра", 
-      img: "/images/elena_b.png", 
+      img: "/images/elena_b.webp",
       desc: "Опыт работы более 15 лет. Квалифицированный психолог, психотерапевт в области системной семейной терапии, автор методики «Круги судьбы», ведущая тренингов. Логопед, олигофренопедагог, педагог." 
     },
     { 
       name: "Елена Ткаченко", 
       role: "Руководитель и инструктор", 
-      img: "/images/elena_t.png", 
+      img: "/images/elena_t.webp",
       desc: "Опыт работы с детьми более 25 лет. Организатор подросткового сегмента тренингов центра «Солнечный круг». Психолог, психотерапевт в области системной семейной терапии, опытная ведущая тренинговых программ." 
     },
     { 
       name: "Ирина Локтеева", 
       role: "Руководитель подросткового тренинга", 
-      img: "/images/irina_l.png", 
+      img: "/images/irina_l.webp",
       desc: "Опыт работы более 5 лет. Руководитель программ «Чудо-Остров» и «Экспедиция». Ведущая тренинговых групп в центре «Пазл» и куратор «Школы Юного Психолога»." 
     },
     { 
       name: "Артём Ткаченко", 
       role: "Руководитель в проекте «Экспедиция»", 
-      img: "/images/artem_t.png", 
+      img: "/images/artem_t.webp",
       desc: "Опыт работы более 10 лет. Основатель команды BrainMaster и «Школы Молодого IT-Инженера». Выступает в роли тренера ИТ-инженерной сборной по подготовке к техническим Олимпиадам." 
     }
   ],
@@ -196,7 +191,7 @@ const useStickyNavbar = (threshold) => {
 // ==========================================
 
 // 🚀 УМНАЯ ЗАГРУЗКА ИЗОБРАЖЕНИЙ С ПОДДЕРЖКОЙ LQIP
-const ProgressiveImage = ({ src, lowResSrc, alt, containerClassName = "", imgClassName = "", children }) => {
+const ProgressiveImage = ({ src, lowResSrc, alt, containerClassName = "", imgClassName = "", children, priority = false }) => {
   const [isLoaded, setIsLoaded] = useState(false);
 
   return (
@@ -212,7 +207,8 @@ const ProgressiveImage = ({ src, lowResSrc, alt, containerClassName = "", imgCla
       <img
         src={src}
         alt={alt}
-        loading="lazy"
+        loading={priority ? "eager" : "lazy"}
+        fetchPriority={priority ? "high" : undefined}
         onLoad={() => setIsLoaded(true)}
         className={`transition-opacity duration-700 z-10 relative ${isLoaded ? 'opacity-100' : 'opacity-0'} ${imgClassName}`}
       />
@@ -387,7 +383,8 @@ const Hero = ({ onOpenModal }) => (
         src={SITE_IMAGES.hero} 
         alt="Подростки у костра" 
         containerClassName="w-full h-full bg-slate-900" 
-        imgClassName="w-full h-full object-cover" 
+        imgClassName="w-full h-full object-cover"
+        priority
       />
     </div>
 
@@ -953,47 +950,70 @@ export default function App() {
     setFormData(prev => ({ ...prev, [name]: value }));
   };
 
-  // Логика отправки формы
+  // Логика отправки формы (прямой POST в Google Apps Script — статический хостинг без Node)
   const handleSubmit = async (e) => {
     e.preventDefault();
     setFormState('loading');
 
-    const { telegramBotToken, telegramChatId } = SITE_SETTINGS.api;
+    const webhook = import.meta.env.VITE_LEADS_WEBHOOK_URL || "";
+    const leadSecretRaw = import.meta.env.VITE_LEADS_SECRET;
+    const leadSecret =
+      typeof leadSecretRaw === "string" && leadSecretRaw.trim() !== ""
+        ? leadSecretRaw.trim()
+        : "";
+    // В dev Vite проксирует на GAS, иначе браузер упирается в CORS (OPTIONS к script.google.com).
+    const leadUrl =
+      import.meta.env.DEV && webhook ? "/api/leads-gas" : webhook;
 
-    // Если токены не настроены, просто симулируем успешную отправку (для тестов)
-    if (telegramBotToken === "ВАШ_ТОКЕН_БОТА" || telegramChatId === "ВАШ_CHAT_ID") {
-      console.warn("⚠️ Токены Telegram не настроены. Имитация отправки.");
-      setTimeout(() => setFormState('success'), SITE_SETTINGS.ui.formSubmitTimeout);
+    if (!leadUrl) {
+      console.error("Задайте VITE_LEADS_WEBHOOK_URL в .env и перезапустите dev / пересоберите проект.");
+      setFormState('error');
       return;
     }
 
-    // Формируем красивое сообщение для Telegram
-    const message = `
-🔥 <b>Новая заявка на Экспедицию!</b>
-    
-👤 <b>Родитель:</b> ${formData.parentName}
-📞 <b>Телефон:</b> ${formData.phone}
-👦 <b>Ребенок:</b> ${formData.childName} (${formData.childAge} лет)
-    `;
+    const phone = formData.phone.trim();
+    if (!/^\+?[0-9()\-\s]{10,}$/.test(phone)) {
+      setFormState('error');
+      return;
+    }
+    if (!/^1[2-7]$/.test(String(formData.childAge).trim())) {
+      setFormState('error');
+      return;
+    }
+
+    const payload = {
+      parentName: formData.parentName.trim(),
+      phone,
+      childName: formData.childName.trim(),
+      childAge: String(formData.childAge).trim(),
+      source: "expedition-2026-landing",
+      submittedAt: new Date().toISOString(),
+      ...(leadSecret ? { leadSecret } : {}),
+    };
 
     try {
-      const response = await fetch(`https://api.telegram.org/bot${telegramBotToken}/sendMessage`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          chat_id: telegramChatId,
-          text: message,
-          parse_mode: 'HTML' // Позволяет использовать жирный текст
-        })
+      const response = await fetch(leadUrl, {
+        method: "POST",
+        headers: { "Content-Type": "application/json; charset=utf-8" },
+        body: JSON.stringify(payload),
       });
 
-      if (response.ok) {
-        setFormState('success');
-        // Очищаем форму после успешной отправки
-        setFormData({ parentName: '', phone: '', childName: '', childAge: '' });
-      } else {
-        setFormState('error');
+      const text = await response.text();
+      let data = null;
+      try {
+        data = text.trim() ? JSON.parse(text) : null;
+      } catch {
+        data = null;
       }
+
+      const gasError = data && data.status === "error";
+      if (!response.ok || gasError) {
+        setFormState('error');
+        return;
+      }
+
+      setFormState('success');
+      setFormData({ parentName: '', phone: '', childName: '', childAge: '' });
     } catch (error) {
       console.error("Ошибка отправки:", error);
       setFormState('error');
@@ -1100,10 +1120,7 @@ export default function App() {
                   <div className="text-center py-8">
                     <div className="w-16 h-16 bg-emerald-100 text-emerald-500 rounded-full flex items-center justify-center mx-auto mb-6"><CheckCircle2 className="w-8 h-8" /></div>
                     <h3 className="text-2xl font-bold text-slate-900 mb-2">Заявка принята!</h3>
-                    <p className="text-slate-600 mb-6">Мы свяжемся с вами в ближайшее время. А пока приглашаем в наш Telegram-канал.</p>
-                    <a href={SITE_SETTINGS.contact.telegramUrl} target="_blank" rel="noreferrer" className="block w-full bg-slate-900 text-white font-bold py-3 rounded-xl hover:bg-slate-800 transition text-center">
-                      Перейти в Telegram
-                    </a>
+                    <p className="text-slate-600 mb-6">Мы свяжемся с вами в ближайшее время и уточним все детали.</p>
                   </div>
                 ) : (
                   <>

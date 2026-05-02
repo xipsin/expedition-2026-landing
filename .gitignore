@@ -16,3 +16,8 @@ raw_photos/
 !public/gallery/
 !public/photos.json
 !public/images/
+
+# Локальные переменные окружения
+.env
+.env.*
+!.env.example

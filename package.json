@@ -6,8 +6,11 @@
   "scripts": {
     "dev": "vite",
     "build": "vite build",
+    "start": "node server.mjs",
     "lint": "eslint .",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "optimize:static": "node scripts/compress-static.js",
+    "optimize:gallery": "node scripts/compress.js"
   },
   "dependencies": {
     "@tailwindcss/vite": "^4.2.4",
